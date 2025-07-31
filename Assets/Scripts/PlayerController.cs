@@ -101,7 +101,7 @@ public class PlayerController : MonoBehaviour
 		_fallTimeoutDelta = fallTimeout;
 	}
 
-	private void Update()
+	private void FixedUpdate()
 	{
 		Jump();
 		GroundedCheck();
@@ -146,7 +146,7 @@ public class PlayerController : MonoBehaviour
 	{
 		// set target speed based on move speed, sprint speed and if sprint is pressed
 		float targetSpeed = _input.sprint ? sprintSpeed : moveSpeed;
-		if (_input.move == Vector2.zero) return; //targetSpeed = 0.0f;
+		if (_input.move == Vector2.zero) targetSpeed = 0.0f;
 		
 		Vector3 right = Vector3.ProjectOnPlane( _mainCamera.transform.right,Vector3.up).normalized;
 		Vector3 forward = Vector3.ProjectOnPlane(_mainCamera.transform.forward, Vector3.up).normalized;
