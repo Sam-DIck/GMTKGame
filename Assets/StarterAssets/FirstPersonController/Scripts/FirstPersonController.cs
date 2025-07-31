@@ -190,8 +190,9 @@ namespace StarterAssets
 			// if there is a move input rotate player when the player is moving
 			if (_input.move != Vector2.zero)
 			{
-				// move
-				inputDirection = transform.right * _input.move.x + transform.forward * _input.move.y;
+				Vector3 right = Vector3.ProjectOnPlane( _mainCamera.transform.right,Vector3.up).normalized;
+				Vector3 forward = Vector3.ProjectOnPlane(_mainCamera.transform.forward, Vector3.up).normalized;
+				inputDirection = right * _input.move.x + forward * _input.move.y;
 			}
 
 			// move the player

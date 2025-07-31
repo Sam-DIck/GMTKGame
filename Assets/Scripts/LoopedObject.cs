@@ -5,6 +5,26 @@ using UnityEngine;
 [System.Serializable]
 public struct MotionKey
 {
+    private static Quaternion NormalizeQuaternion(Quaternion q)
+    {
+        float mag = Mathf.Sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
+        if (mag > 0.0001f)
+        {
+            return new Quaternion(q.x / mag, q.y / mag, q.z / mag, q.w / mag);
+        }
+        else
+        {
+            // fallback to identity to prevent invalid rotations
+            return Quaternion.identity;
+        }
+    }
+    public MotionKey(Vector3 pos, Quaternion rot, Vector3 vel, Vector3 angVel)
+    {
+        position = pos;
+        rotation = NormalizeQuaternion(rot);
+        velocity = vel;
+        angularVelocity = angVel;
+    }
     public Vector3 position;
     public Quaternion rotation;
     public Vector3 velocity;
@@ -40,7 +60,7 @@ public class LoopedObject : MonoBehaviour
             rb = GetComponent<Rigidbody>();
         }
     }
-
+    
     // Update is called once per frame
     void FixedUpdate()
     {
@@ -49,12 +69,11 @@ public class LoopedObject : MonoBehaviour
             case LoopState.Forward:
                 rb.isKinematic = false;
                 loopElapsed -= Time.fixedDeltaTime;
-                keys.Add(new MotionKey {
-                        position = transform.position,
-                        rotation = transform.rotation,
-                        velocity = rb.linearVelocity,
-                        angularVelocity = rb.angularVelocity
-                    }
+                if (rb.linearVelocity.magnitude !=0 || rb.angularVelocity.magnitude != 0)
+                keys.Add(new MotionKey(transform.position,
+                                       transform.rotation,
+                                       rb.linearVelocity,
+                                       rb.angularVelocity)
                 );
                 if (loopElapsed <= 0)
                 {
@@ -71,15 +90,15 @@ public class LoopedObject : MonoBehaviour
                     keys.Clear();
                     rb.isKinematic = false;
                     loopState = LoopState.Forward;
-                    transform.position = startKey.position;
-                    transform.rotation = startKey.rotation;
+                    rb.MovePosition(startKey.position);
+                    rb.MoveRotation(startKey.rotation);
                     rb.linearVelocity = startKey.velocity;
                     rb.angularVelocity = startKey.angularVelocity;
                     break;
                 }
                 var key =  keys[keys.Count - (int)trackRate];
-                transform.position = key.position;
-                transform.rotation = key.rotation;
+                rb.MovePosition(key.position);
+                rb.MoveRotation(key.rotation);
                 keys = keys.Take(keys.Count - (int)trackRate).ToList();
                 break;
         }
