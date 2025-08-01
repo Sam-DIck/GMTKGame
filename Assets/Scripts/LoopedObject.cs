@@ -1,22 +1,24 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
 public struct MotionKey
 {
-    private static Quaternion NormalizeQuaternion(Quaternion q)
+    private static Quaternion NormalizeQuaternion(Quaternion quat)
     {
-        float mag = Mathf.Sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
-        if (mag > 0.0001f)
+        bool IsFinite(Quaternion q)
         {
-            return new Quaternion(q.x / mag, q.y / mag, q.z / mag, q.w / mag);
+            return float.IsFinite(q.x) && float.IsFinite(q.y) && float.IsFinite(q.z) && float.IsFinite(q.w);
         }
-        else
-        {
-            // fallback to identity to prevent invalid rotations
-            return Quaternion.identity;
-        }
+        if (!IsFinite(quat)) return Quaternion.identity;
+
+        float mag = Mathf.Sqrt(quat.x * quat.x + quat.y * quat.y + quat.z * quat.z + quat.w * quat.w);
+        if (mag < 0.0001f) return Quaternion.identity;
+
+        return new Quaternion(quat.x / mag, quat.y / mag, quat.z / mag, quat.w / mag);
     }
+    
     public MotionKey(Vector3 pos, Quaternion rot, Vector3 vel, Vector3 angVel)
     {
         position = pos;
@@ -38,28 +40,50 @@ enum LoopState
 public class LoopedObject : MonoBehaviour
 {
     [SerializeField] private MotionKey startKey;
-    [SerializeField] private List<MotionKey> keys;
+    [SerializeField] private List<MotionKey> keys = new();
     [SerializeField] private float loopDuration;
     [SerializeField] private uint trackRate = 1;
     [SerializeField] private bool useRecorded;
     private float _loopElapsed;
     private LoopState _loopState = LoopState.Forward;
-    [SerializeField] private int _currentKey;
+    private int _currentKey;
     private Rigidbody _rigidbody;
+    private float _recordedDuration;
+    private bool _initialKinematic;
 
-    public void Init(float duration, MotionKey start)
+    public void StartRecording()
     {
-        startKey = start;
-        loopDuration = duration;
-        _loopElapsed = duration;
+        useRecorded = false;
+        _loopState = LoopState.Forward;
+        _loopElapsed = 0;
+        loopDuration = int.MaxValue;
+        _recordedDuration = 0f;
+        _currentKey = 0;
+        keys.Clear();
+        startKey = new MotionKey(transform.position, transform.rotation, _rigidbody.linearVelocity, _rigidbody.angularVelocity);
     }
+    public void StopRecording()
+    {
+        loopDuration = _recordedDuration;
+        useRecorded = true;
+        _loopState = LoopState.Backward;
+    }
+
+    
+    
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    private void Start()
+    private void Awake()
     {
         if (!_rigidbody)
         {
             _rigidbody = GetComponent<Rigidbody>();
+            _initialKinematic = _rigidbody.isKinematic;
         }
+    }
+
+    private void OnDestroy()
+    {
+        RestoreKey(keys[_currentKey],_initialKinematic);
     }
 
     private void RestoreKey(MotionKey key, bool kinematic)
@@ -67,28 +91,29 @@ public class LoopedObject : MonoBehaviour
         _rigidbody.MovePosition(key.position);
         _rigidbody.MoveRotation(key.rotation);
         _rigidbody.isKinematic = kinematic;
-        if (!kinematic)
-        {
-            _rigidbody.linearVelocity = key.velocity;
-            _rigidbody.angularVelocity = key.angularVelocity;
-        }
+        if (kinematic) return;
+        _rigidbody.linearVelocity = key.velocity;
+        _rigidbody.angularVelocity = key.angularVelocity;
+        
     }
     // Update is called once per frame
     private void FixedUpdate()
     {
+        _recordedDuration += Time.fixedDeltaTime;       
         switch (_loopState)
         {
             case LoopState.Forward:
 
                 if (useRecorded)                                        // if using recorded track
                 {
-                    RestoreKey(keys[_currentKey],true);             // restore current frame 
-
-                    _currentKey++;                                          // increment frame index
-                    if (_currentKey == keys.Count)                          // if finshed track
+                    if (_currentKey >= keys.Count)                          // if finished track
                     {
                         _loopState = LoopState.Backward;                        // switch to reverse loop
+                        break;
                     }
+                    RestoreKey(keys[_currentKey],true);             // restore current frame 
+                    _currentKey++;                                          // increment frame index
+                    
                     
                 }
                 else {                                                  // else (not using recorded track)
