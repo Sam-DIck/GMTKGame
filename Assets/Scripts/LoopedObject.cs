@@ -83,17 +83,17 @@ public class LoopedObject : MonoBehaviour
 
     private void OnDestroy()
     {
-        RestoreKey(keys[_currentKey],_initialKinematic);
+        RestoreKey(keys[_currentKey],_initialKinematic,-trackRate);
     }
 
-    private void RestoreKey(MotionKey key, bool kinematic)
+    private void RestoreKey(MotionKey key, bool kinematic, float speedMultiplier=1f)
     {
         _rigidbody.MovePosition(key.position);
         _rigidbody.MoveRotation(key.rotation);
         _rigidbody.isKinematic = kinematic;
         if (kinematic) return;
-        _rigidbody.linearVelocity = key.velocity;
-        _rigidbody.angularVelocity = key.angularVelocity;
+        _rigidbody.linearVelocity = key.velocity*speedMultiplier;
+        _rigidbody.angularVelocity = key.angularVelocity*speedMultiplier;
         
     }
     // Update is called once per frame

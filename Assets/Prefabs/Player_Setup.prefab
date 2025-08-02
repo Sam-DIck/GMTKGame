@@ -653,11 +653,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b5dd0ba788987fdcba63fabd618ec7fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxDistance: 15
+  maxDistance: 5
   maxSpeed: 15
   maxForce: 200
   forceScale: 10
-  GGAction: {fileID: 1120369429361536294, guid: 289c1b55c9541489481df5cc06664110, type: 3}
+  actionReference: {fileID: 1120369429361536294, guid: 289c1b55c9541489481df5cc06664110, type: 3}
 --- !u!114 &3158168339932063242
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -670,7 +670,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 34412e90cc0893a678ce2c5e76a9a0fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxDistance: 15
+  maxDistance: 5
+  recordActionReference: {fileID: 7971842144606684630, guid: 289c1b55c9541489481df5cc06664110, type: 3}
+  removeActionReference: {fileID: 1781555164194001046, guid: 289c1b55c9541489481df5cc06664110, type: 3}
 --- !u!1 &8704929322400834980
 GameObject:
   m_ObjectHideFlags: 0
