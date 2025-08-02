@@ -17,7 +17,7 @@ public class LockedDoor : EventReceiver
     
     private float _openAmount;
 
-    private bool ShouldOpen => eventSender.EventActive ^ invert;
+    private bool ShouldOpen => (eventSender&&eventSender.EventActive) ^ invert;
     private bool ShouldClose => !ShouldOpen && _openAmount > 0f;
     private bool Opening => ShouldOpen || (safetyZone && safetyZone.EventActive && ShouldClose);
     // Start is called once before the first execution of Update after the MonoBehaviour is created
