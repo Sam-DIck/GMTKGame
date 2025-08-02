@@ -42,7 +42,7 @@ public class LoopedObject : MonoBehaviour
     [SerializeField] private MotionKey startKey;
     [SerializeField] private List<MotionKey> keys = new();
     [SerializeField] private float loopDuration;
-    [SerializeField] private uint trackRate = 1;
+    [SerializeField] private uint trackRate = 3;
     [SerializeField] private bool useRecorded;
     private float _loopElapsed;
     private LoopState _loopState = LoopState.Forward;

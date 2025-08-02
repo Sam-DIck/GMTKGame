@@ -54,7 +54,7 @@ public class GravityGun : MonoBehaviour
             
         }
 
-        if (Input.GetMouseButtonUp(0) && _lockedRigidbody)
+        if (!Input.GetMouseButton(0) && _lockedRigidbody)
         {
             _lockedRigidbody.useGravity = true;
             _lockedRigidbody = null;
