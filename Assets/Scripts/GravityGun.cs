@@ -1,4 +1,6 @@
- using UnityEngine;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 
 public class GravityGun : MonoBehaviour
 {
@@ -6,7 +8,12 @@ public class GravityGun : MonoBehaviour
     [SerializeField] private float maxSpeed = 1f;
     [SerializeField] private float maxForce = 50f;
     [SerializeField] private  float forceScale = 1f;
+
+
     
+    [Header("Input")]
+    [SerializeField] private InputActionReference actionReference;
+
     private Camera _mainCamera;
     private Rigidbody _lockedRigidbody;
     private float _lockDistance;
@@ -14,50 +21,62 @@ public class GravityGun : MonoBehaviour
     void Start()
     {
         _mainCamera = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Camera>();
+        actionReference.action.started += OnStarted;
+        actionReference.action.canceled += OnEnd;
     }
 
-    // Update is called once per frame
-    void FixedUpdate()
-    {
-        if (Input.GetMouseButtonDown(0))
-        {
-            
-            Vector3 screenCenter = new Vector3(Screen.width / 2f, Screen.height / 2f, 0);
-            Ray ray = _mainCamera.ScreenPointToRay(screenCenter);
-            if (Physics.Raycast(ray, out  RaycastHit hit))
-            {
-                //Debug.Log("Hit object: " + hit.collider.name);
 
-                if (hit.distance < maxDistance)
+
+    void OnStarted(InputAction.CallbackContext ctx)
+    {
+        Vector3 screenCenter = new Vector3(Screen.width / 2f, Screen.height / 2f, 0);
+        Ray ray = _mainCamera.ScreenPointToRay(screenCenter);
+        if (Physics.Raycast(ray, out  RaycastHit hit))
+        {
+            //Debug.Log("Hit object: " + hit.collider.name);
+
+            if (hit.distance < maxDistance)
+            {
+                Debug.Log(hit.collider.name);
+                Rigidbody rb = hit.rigidbody;
+                if (rb && !rb.isKinematic)
                 {
-                    Debug.Log(hit.collider.name);
-                    Rigidbody rb = hit.collider.GetComponent<Rigidbody>();
-                    if (rb && !rb.isKinematic)
-                    {
-                        _lockDistance = (_mainCamera.transform.position - hit.transform.position).magnitude;
-                        _lockedRigidbody = rb;
-                        _lockedRigidbody.useGravity = false;
-                    }
+                    _lockDistance = (_mainCamera.transform.position - hit.transform.position).magnitude;
+                    _lockedRigidbody = rb;
+                    _lockedRigidbody.useGravity = false;
                 }
             }
         }
+    }
 
+    void OnEnd(InputAction.CallbackContext ctx)
+    {
+        if (!_lockedRigidbody) return;
+        
+        _lockedRigidbody.useGravity = true;
+        _lockedRigidbody = null;
+        
+    }
+    
+    // Update is called once per frame
+    void FixedUpdate()
+    {
         if (_lockedRigidbody)
         {
             Vector3 targetPosition = _mainCamera.transform.position + _lockDistance * _mainCamera.transform.forward;
             Vector3 direction = targetPosition - _lockedRigidbody.transform.position;
-            Vector3 targetVelocity = Vector3.ClampMagnitude(direction,maxSpeed);
-            
-            Vector3 delta = targetVelocity - _lockedRigidbody.linearVelocity;
-            Vector3 force = Vector3.ClampMagnitude(delta * forceScale, maxForce);
-            _lockedRigidbody.AddForce(force);
-            
-        }
+            float distance = direction.magnitude;
+            direction.Normalize();
 
-        if (!Input.GetMouseButton(0) && _lockedRigidbody)
-        {
-            _lockedRigidbody.useGravity = true;
-            _lockedRigidbody = null;
+            // Slow down when close
+            float slowingRadius = 2f; // tweak this
+            float desiredSpeed = (distance < slowingRadius) ? maxSpeed * (distance / slowingRadius) : maxSpeed;
+
+            Vector3 desiredVelocity = direction * desiredSpeed;
+            Vector3 steering = desiredVelocity - _lockedRigidbody.linearVelocity;
+            Vector3 force = Vector3.ClampMagnitude(steering * forceScale, maxForce);
+
+            _lockedRigidbody.AddForce(force);
         }
     }
 
