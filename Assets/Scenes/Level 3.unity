@@ -2224,11 +2224,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 545243549042821194, guid: ec8b91baa3b42e5459eb6b80478d63d1, type: 3}
       propertyPath: m_LocalScale.x
-      value: 4
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 545243549042821194, guid: ec8b91baa3b42e5459eb6b80478d63d1, type: 3}
       propertyPath: m_LocalScale.z
-      value: 4
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 545243549042821194, guid: ec8b91baa3b42e5459eb6b80478d63d1, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2236,7 +2236,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 545243549042821194, guid: ec8b91baa3b42e5459eb6b80478d63d1, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 3.4
+      value: 3.55
       objectReference: {fileID: 0}
     - target: {fileID: 545243549042821194, guid: ec8b91baa3b42e5459eb6b80478d63d1, type: 3}
       propertyPath: m_LocalPosition.z
@@ -2269,22 +2269,6 @@ PrefabInstance:
     - target: {fileID: 545243549042821194, guid: ec8b91baa3b42e5459eb6b80478d63d1, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4194475581632679858, guid: ec8b91baa3b42e5459eb6b80478d63d1, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: 98f6ea43ffd0f5a4fbb797e4f3977e7a, type: 2}
-    - target: {fileID: 4346440202718589961, guid: ec8b91baa3b42e5459eb6b80478d63d1, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 1.6
-      objectReference: {fileID: 0}
-    - target: {fileID: 8624843254185357951, guid: ec8b91baa3b42e5459eb6b80478d63d1, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -0.01
-      objectReference: {fileID: 0}
-    - target: {fileID: 8624843254185357951, guid: ec8b91baa3b42e5459eb6b80478d63d1, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -0.01
       objectReference: {fileID: 0}
     - target: {fileID: 8754547679875836874, guid: ec8b91baa3b42e5459eb6b80478d63d1, type: 3}
       propertyPath: m_Name
@@ -2532,6 +2516,6 @@ SceneRoots:
   - {fileID: 1566994465}
   - {fileID: 1310402536}
   - {fileID: 1896249266}
-  - {fileID: 1948827968}
   - {fileID: 1347315765}
+  - {fileID: 1948827968}
   - {fileID: 7677440861612018415}
