@@ -243,8 +243,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6500547770485945579}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.10000038, y: 1.615, z: 0.119999886}
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalPosition: {x: -1.3999996, y: 1.615, z: 3.1800003}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -443,7 +443,6 @@ GameObject:
   - component: {fileID: 1636061856462114306}
   - component: {fileID: 7285591185002602218}
   - component: {fileID: 3882608283728010889}
-  - component: {fileID: 5736826470374609622}
   - component: {fileID: 3158168339932063242}
   - component: {fileID: 1457388110220468025}
   m_Layer: 8
@@ -642,22 +641,6 @@ MonoBehaviour:
   cinemachineCameraTarget: {fileID: 8704929322400834980}
   topClamp: 89
   bottomClamp: -89
---- !u!114 &5736826470374609622
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8678077603367584152}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b5dd0ba788987fdcba63fabd618ec7fd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxGrabDistance: 100
-  holdDistance: 4
-  maxVelChange: 15
-  grabAction: {fileID: 0}
 --- !u!114 &3158168339932063242
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -671,6 +654,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxDistance: 15
+  recordAction: {fileID: 5781750723773727751, guid: 4419d82f33d36e848b3ed5af4c8da37e, type: 3}
+  removeAction: {fileID: -5061629603041879336, guid: 4419d82f33d36e848b3ed5af4c8da37e, type: 3}
 --- !u!114 &1457388110220468025
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -689,7 +674,7 @@ MonoBehaviour:
   maxDeceleration: 50
   angularDampingDuringHold: 5
   maxAngularSpeed: 10
-  grabAction: {fileID: -2184649818985049376, guid: 289c1b55c9541489481df5cc06664110, type: 3}
+  grabAction: {fileID: -3434596036858192287, guid: 4419d82f33d36e848b3ed5af4c8da37e, type: 3}
 --- !u!1 &8704929322400834980
 GameObject:
   m_ObjectHideFlags: 0

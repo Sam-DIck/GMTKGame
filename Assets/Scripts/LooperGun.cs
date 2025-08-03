@@ -1,83 +1,110 @@
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.InputSystem;
 
+/// <summary>
+/// Fires a ray from the screen-centre: hold the Record action to start recording
+/// a LoopedObject, release to stop.  Press the Remove action to delete the
+/// looped object closest to the cross-hair.
+/// </summary>
 public class LooperGun : MonoBehaviour
 {
-    
-    [SerializeField] private float maxDistance = 100f;
-    
-    private Camera _mainCamera;
+    /* ─── Inspector fields ─────────────────────────────────────────────── */
 
-    private LoopedObject _targetedObject; // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    [Header("Gun Settings")]
+    [SerializeField] private float maxDistance = 100f;
+
+    [Header("Input Actions (New Input System)")]
+    [Tooltip("Button held to start recording; released to stop (e.g. RightMouse).")]
+    [SerializeField] private InputActionReference recordAction;
+
+    [Tooltip("Button pressed once to delete the nearest looped object (e.g. R key).")]
+    [SerializeField] private InputActionReference removeAction;
+
+    /* ─── Internals ────────────────────────────────────────────────────── */
+
+    private Camera _cam;
+    private LoopedObject _targeted;          // currently recording
+
+    /* ─── Unity lifecycle ──────────────────────────────────────────────── */
+
+    private void Awake() => _cam = Camera.main;
+
+    private void OnEnable()
     {
-        _mainCamera = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Camera>();
+        // Make sure the whole asset is enabled so callbacks fire in a build
+        recordAction.asset.Enable();
+        removeAction.asset.Enable();
+
+        recordAction.action.started += OnRecordStarted;   // button down
+        recordAction.action.canceled += OnRecordCanceled;  // button up
+        removeAction.action.performed += OnRemovePerformed;
     }
 
-    void Update()
+    private void OnDisable()
     {
-        // On right mouse button down
-        if (Input.GetMouseButtonDown(1))
-        {
-            Vector3 screenCenter = new Vector3(Screen.width / 2f, Screen.height / 2f, 0);
-            Ray ray = _mainCamera.ScreenPointToRay(screenCenter);
-            if (Physics.Raycast(ray, out RaycastHit hit, maxDistance))
-            {
-                Rigidbody rb = hit.collider.attachedRigidbody;
-                if (rb && !rb.isKinematic)
-                {
-                    Debug.Log(hit.collider.name);
-                    LoopedObject looped = rb.GetComponent<LoopedObject>();
-                    if (!looped)
-                    {
-                        looped = rb.gameObject.AddComponent<LoopedObject>();
-                    }
+        recordAction.action.started -= OnRecordStarted;
+        recordAction.action.canceled -= OnRecordCanceled;
+        removeAction.action.performed -= OnRemovePerformed;
 
-                    looped.StartRecording();
-                    _targetedObject = looped;
-                }
+        recordAction.asset.Disable();
+        removeAction.asset.Disable();
+    }
+
+    /* ─── Callbacks ────────────────────────────────────────────────────── */
+
+    // Start recording when the button is pressed
+    private void OnRecordStarted(InputAction.CallbackContext _)
+    {
+        Ray ray = _cam.ScreenPointToRay(
+            new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f));
+
+        if (!Physics.Raycast(ray, out RaycastHit hit, maxDistance)) return;
+
+        Rigidbody rb = hit.rigidbody;
+        if (rb == null || rb.isKinematic) return;
+
+        // Get or add the LoopedObject component
+        LoopedObject looped =
+            rb.GetComponent<LoopedObject>() ?? rb.gameObject.AddComponent<LoopedObject>();
+
+        looped.StartRecording();
+        _targeted = looped;
+    }
+
+    // Stop recording when the button is released
+    private void OnRecordCanceled(InputAction.CallbackContext _)
+    {
+        if (_targeted == null) return;
+
+        _targeted.StopRecording();
+        _targeted = null;
+    }
+
+    // Delete the looped object closest to the cross-hair
+    private void OnRemovePerformed(InputAction.CallbackContext _)
+    {
+        LoopedObject[] all = FindObjectsByType<LoopedObject>(
+                                FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+
+        if (all.Length == 0) return;
+
+        Vector2 centre = new(Screen.width * 0.5f, Screen.height * 0.5f);
+        LoopedObject best = null;
+        float bestDist = float.MaxValue;
+
+        foreach (LoopedObject looped in all)
+        {
+            Vector3 screenPos = _cam.WorldToScreenPoint(looped.transform.position);
+            if (screenPos.z < 0f) continue;            // behind camera
+
+            float dist = Vector2.Distance(centre, new Vector2(screenPos.x, screenPos.y));
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                best = looped;
             }
         }
 
-        // On right mouse button up
-        if (Input.GetMouseButtonUp(1))
-        {
-            if (_targetedObject)
-            {
-                _targetedObject.StopRecording();
-                _targetedObject = null;
-            }
-        }
-
-        if (Input.GetKeyDown(KeyCode.R))
-        {
-            LoopedObject[] allLooped = FindObjectsByType<LoopedObject>(FindObjectsInactive.Exclude,
-                                                                       FindObjectsSortMode.None);
-            if (allLooped.Length == 0) return;
-
-            Vector2 screenCenter = new Vector2(Screen.width / 2f, Screen.height / 2f);
-            Camera cam = _mainCamera;
-            LoopedObject closest = null;
-            float closestDist = float.MaxValue;
-
-            foreach (var looped in allLooped)
-            {
-                Vector3 screenPos = cam.WorldToScreenPoint(looped.transform.position);
-
-                // Ignore if behind the camera
-                if (screenPos.z < 0) continue;
-
-                float dist = Vector2.Distance(screenCenter, new Vector2(screenPos.x, screenPos.y));
-                if (dist < closestDist)
-                {
-                    closestDist = dist;
-                    closest = looped;
-                }
-            }
-
-            if (closest)
-            {
-                Destroy(closest);
-            }
-        }
+        if (best) Destroy(best);
     }
 }

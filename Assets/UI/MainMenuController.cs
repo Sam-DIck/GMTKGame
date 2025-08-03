@@ -1,28 +1,27 @@
-﻿using System;
-using System.Linq; // For ToList()
+﻿
+using System;
 using UnityEngine;
-using UnityEngine.InputSystem;   // Esc key overlay toggle
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
 #if UNITY_EDITOR
-using UnityEditor; // SceneAsset drag-and-drop in Inspector
+using UnityEditor; // for SceneAsset field in Inspector
 #endif
 
 public class MainMenuController : MonoBehaviour
 {
-    // ---------------------------- Nested data
     [Serializable]
     private class LevelEntry
     {
-        public string buttonName; // e.g. "level1-button"
+        public string buttonName;           // e.g. "level1-button"
 #if UNITY_EDITOR
-        public SceneAsset sceneAsset;     // Assigned in Editor
+        public SceneAsset sceneAsset;       // drag & drop in Inspector
 #endif
-        [HideInInspector] public string sceneName; // Used at runtime
+        [HideInInspector] public string sceneName; // stored for runtime builds
     }
 
-    // ---------------------------- Inspector fields
+    // ---------------- Inspector fields
     [Header("UI Toolkit")]
     [SerializeField] private UIDocument uiDocument;
 
@@ -33,63 +32,74 @@ public class MainMenuController : MonoBehaviour
         new LevelEntry { buttonName = "level1-button" },
         new LevelEntry { buttonName = "level2-button" },
         new LevelEntry { buttonName = "level3-button" },
-        new LevelEntry { buttonName = "level4-button" },
-        new LevelEntry { buttonName = "level5-button" },
     };
 
-    // ---------------------------- UXML element names
+    // ---------------- UXML element names (edit if your UXML differs)
     private const string kButtonsPanelName = "buttons-panel";
     private const string kLevelsPanelName = "levels-panel";
     private const string kControlsPanelName = "controls-panel";
+    private const string kTitleName = "title-text";
+
     private const string kPlayButtonName = "play-button";
     private const string kLevelsButtonName = "levels-button";
     private const string kControlsButtonName = "controls-button";
     private const string kQuitButtonName = "quit-button";
-    private const string kBackButtonName = "back-button"; // Shared by overlays
+    private const string kBackButtonName = "back-button"; // shared
 
-    // ---------------------------- Cached references
+    // ---------------- Cached UI references
     private VisualElement root;
     private VisualElement buttonsPanel;
     private VisualElement levelsPanel;
     private VisualElement controlsPanel;
+    private VisualElement titleElement;
 
-    private InputAction cancelAction; // Esc key
+    // ---------------- Input action for Esc
+    private InputAction cancelAction;
 
-    // -------------------------------------------------- Editor-time sync
+    // ---------------- Unity callbacks
     private void OnValidate()
     {
 #if UNITY_EDITOR
+        // Keep sceneName in sync so it’s available in builds
         foreach (var entry in levels)
+        {
             if (entry.sceneAsset != null)
                 entry.sceneName = entry.sceneAsset.name;
+        }
 #endif
     }
 
-    // -------------------------------------------------- Runtime init
+    private void Awake()
+    {
+        cancelAction = new InputAction("Cancel", binding: "<Keyboard>/escape");
+    }
+
     private void OnEnable()
     {
         if (uiDocument == null)
         {
-            Debug.LogError("MainMenuController: UIDocument reference missing.");
+            Debug.LogError("MainMenuController: UIDocument not assigned.");
             return;
         }
 
-        // --- Panel cache ---
         root = uiDocument.rootVisualElement;
         buttonsPanel = root.Q<VisualElement>(kButtonsPanelName);
         levelsPanel = root.Q<VisualElement>(kLevelsPanelName);
         controlsPanel = root.Q<VisualElement>(kControlsPanelName);
+        titleElement = root.Q<VisualElement>(kTitleName);
 
-        if (buttonsPanel == null || levelsPanel == null || controlsPanel == null)
+        if (buttonsPanel == null || levelsPanel == null || controlsPanel == null || titleElement == null)
         {
-            Debug.LogError("MainMenuController: One or more panels not found. Check element names in UXML.");
+            Debug.LogError("MainMenuController: One or more required elements not found. Check UXML names.");
             return;
         }
 
+        // Hide overlays at start
         levelsPanel.style.display = DisplayStyle.None;
         controlsPanel.style.display = DisplayStyle.None;
+        titleElement.style.display = DisplayStyle.Flex;
 
-        // --- Main buttons wiring ---
+        // ---- Main menu buttons ----
         Button playBtn = root.Q<Button>(kPlayButtonName);
         Button levelsBtn = root.Q<Button>(kLevelsButtonName);
         Button controlsBtn = root.Q<Button>(kControlsButtonName);
@@ -100,24 +110,26 @@ public class MainMenuController : MonoBehaviour
         if (controlsBtn != null) controlsBtn.clicked += ShowControls;
         if (quitBtn != null) quitBtn.clicked += QuitGame;
 
-        // --- Back buttons in overlays ---
+        // ---- Back buttons (could be multiple) ----
         var backButtons = root.Query<Button>(name: kBackButtonName).ToList();
         foreach (var b in backButtons)
-            if (b != null) b.clicked += ReturnToMainMenu;
+            b.clicked += ReturnToMainMenu;
 
-        // --- Level-specific buttons ---
+        // ---- Level buttons ----
         for (int i = 0; i < levels.Length; ++i)
         {
-            int idx = i; // local copy for closure
-            Button lvlBtn = root.Q<Button>(levels[i].buttonName);
-            if (lvlBtn != null)
-                lvlBtn.clicked += () => LoadLevel(idx);
+            string btnName = levels[i].buttonName;
+            Button b = root.Q<Button>(btnName);
+            if (b != null)
+            {
+                int idx = i; // capture
+                b.clicked += () => LoadLevel(idx);
+            }
         }
 
-        // --- Esc key overlay toggle ---
-        cancelAction = new InputAction("Cancel", binding: "<Keyboard>/escape");
+        // ---- Esc key closes overlay ----
         cancelAction.Enable();
-        cancelAction.performed += _ =>
+        cancelAction.performed += ctx =>
         {
             if (levelsPanel.style.display == DisplayStyle.Flex || controlsPanel.style.display == DisplayStyle.Flex)
                 ReturnToMainMenu();
@@ -126,33 +138,33 @@ public class MainMenuController : MonoBehaviour
 
     private void OnDisable()
     {
-        if (cancelAction != null)
-        {
-            cancelAction.performed -= _ => ReturnToMainMenu();
-            cancelAction.Disable();
-        }
+        cancelAction.performed -= ctx => ReturnToMainMenu(); // clean-up
+        cancelAction.Disable();
     }
 
-    // -------------------------------------------------- Panel helpers
+    // ---------------- Panel helpers
     private void ShowLevels()
     {
         levelsPanel.style.display = DisplayStyle.Flex;
         controlsPanel.style.display = DisplayStyle.None;
+        titleElement.style.display = DisplayStyle.None;
     }
 
     private void ShowControls()
     {
         controlsPanel.style.display = DisplayStyle.Flex;
         levelsPanel.style.display = DisplayStyle.None;
+        titleElement.style.display = DisplayStyle.None;
     }
 
     private void ReturnToMainMenu()
     {
         levelsPanel.style.display = DisplayStyle.None;
         controlsPanel.style.display = DisplayStyle.None;
+        titleElement.style.display = DisplayStyle.Flex;
     }
 
-    // -------------------------------------------------- Scene loading
+    // ---------------- Scene loading
     private void LoadLevel(int index)
     {
         if (index < 0 || index >= levels.Length)
@@ -171,7 +183,7 @@ public class MainMenuController : MonoBehaviour
         SceneManager.LoadScene(sceneName);
     }
 
-    // -------------------------------------------------- Quit
+    // ---------------- Quit
     private void QuitGame()
     {
 #if UNITY_EDITOR
