@@ -1,23 +1,24 @@
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 [System.Serializable]
 public struct MotionKey
 {
-    private static Quaternion NormalizeQuaternion(Quaternion q)
+    private static Quaternion NormalizeQuaternion(Quaternion quat)
     {
-        float mag = Mathf.Sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
-        if (mag > 0.0001f)
+        bool IsFinite(Quaternion q)
         {
-            return new Quaternion(q.x / mag, q.y / mag, q.z / mag, q.w / mag);
+            return float.IsFinite(q.x) && float.IsFinite(q.y) && float.IsFinite(q.z) && float.IsFinite(q.w);
         }
-        else
-        {
-            // fallback to identity to prevent invalid rotations
-            return Quaternion.identity;
-        }
+        if (!IsFinite(quat)) return Quaternion.identity;
+
+        float mag = Mathf.Sqrt(quat.x * quat.x + quat.y * quat.y + quat.z * quat.z + quat.w * quat.w);
+        if (mag < 0.0001f) return Quaternion.identity;
+
+        return new Quaternion(quat.x / mag, quat.y / mag, quat.z / mag, quat.w / mag);
     }
+    
     public MotionKey(Vector3 pos, Quaternion rot, Vector3 vel, Vector3 angVel)
     {
         position = pos;
@@ -39,69 +40,125 @@ enum LoopState
 public class LoopedObject : MonoBehaviour
 {
     [SerializeField] private MotionKey startKey;
-    [SerializeField] private List<MotionKey> keys;
+    [SerializeField] private List<MotionKey> keys = new();
     [SerializeField] private float loopDuration;
-    [SerializeField] private uint trackRate = 1;
-    private float loopElapsed;
-    private LoopState loopState = LoopState.Forward;
-    private Rigidbody rb;
+    [SerializeField] private uint trackRate = 3;
+    [SerializeField] private bool useRecorded;
+    private float _loopElapsed;
+    private LoopState _loopState = LoopState.Forward;
+    private int _currentKey;
+    private Rigidbody _rigidbody;
+    private float _recordedDuration;
+    private bool _initialKinematic;
 
-    void Init(float duration, MotionKey start)
+    public void StartRecording()
     {
-        startKey = start;
-        loopDuration = duration;
-        loopElapsed = duration;
+        useRecorded = false;
+        _loopState = LoopState.Forward;
+        _loopElapsed = 0;
+        loopDuration = int.MaxValue;
+        _recordedDuration = 0f;
+        _currentKey = 0;
+        keys.Clear();
+        startKey = new MotionKey(transform.position, transform.rotation, _rigidbody.linearVelocity, _rigidbody.angularVelocity);
     }
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    public void StopRecording()
     {
-        if (!rb)
+        loopDuration = _recordedDuration;
+        useRecorded = true;
+        _loopState = LoopState.Backward;
+    }
+
+    
+    
+    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    private void Awake()
+    {
+        if (!_rigidbody)
         {
-            rb = GetComponent<Rigidbody>();
+            _rigidbody = GetComponent<Rigidbody>();
+            _initialKinematic = _rigidbody.isKinematic;
         }
     }
-    
-    // Update is called once per frame
-    void FixedUpdate()
+
+    private void OnDestroy()
     {
-        switch (loopState)
+        RestoreKey(keys[_currentKey],_initialKinematic);
+    }
+
+    private void RestoreKey(MotionKey key, bool kinematic)
+    {
+        _rigidbody.MovePosition(key.position);
+        _rigidbody.MoveRotation(key.rotation);
+        _rigidbody.isKinematic = kinematic;
+        if (kinematic) return;
+        _rigidbody.linearVelocity = key.velocity;
+        _rigidbody.angularVelocity = key.angularVelocity;
+        
+    }
+    // Update is called once per frame
+    private void FixedUpdate()
+    {
+        _recordedDuration += Time.fixedDeltaTime;       
+        switch (_loopState)
         {
             case LoopState.Forward:
-                rb.isKinematic = false;
-                loopElapsed -= Time.fixedDeltaTime;
-                if (rb.linearVelocity.magnitude !=0 || rb.angularVelocity.magnitude != 0)
-                keys.Add(new MotionKey(transform.position,
-                                       transform.rotation,
-                                       rb.linearVelocity,
-                                       rb.angularVelocity)
-                );
-                if (loopElapsed <= 0)
+
+                if (useRecorded)                                        // if using recorded track
                 {
-                    loopElapsed =  loopDuration;
-                    loopState = LoopState.Backward;
+                    if (_currentKey >= keys.Count)                          // if finished track
+                    {
+                        _loopState = LoopState.Backward;                        // switch to reverse loop
+                        break;
+                    }
+                    RestoreKey(keys[_currentKey],true);             // restore current frame 
+                    _currentKey++;                                          // increment frame index
                     
+                    
+                }
+                else {                                                  // else (not using recorded track)
+                    _loopElapsed += Time.fixedDeltaTime;                    // update loop timer
+                    
+                    keys.Add(new MotionKey(transform.position,          // record motion to track
+                        transform.rotation,
+                        _rigidbody.linearVelocity,
+                        _rigidbody.angularVelocity)
+                    );
+                    
+                    if (_loopElapsed >= loopDuration)                       // if loop time elapsed
+                    {
+                        _loopElapsed = 0;                                      // reset loop timer
+                        _loopState = LoopState.Backward;                       // switch to reverse loop
+                        _currentKey = keys.Count - 1;                          // set frame index to the end
+                    
+                    }
                 }
                 break;
             case LoopState.Backward:
-                
-                rb.isKinematic = true;
-                if (keys.Count <= trackRate)
+                if (_currentKey <= trackRate)                           // if trackback finished
                 {
-                    keys.Clear();
-                    rb.isKinematic = false;
-                    loopState = LoopState.Forward;
-                    rb.MovePosition(startKey.position);
-                    rb.MoveRotation(startKey.rotation);
-                    rb.linearVelocity = startKey.velocity;
-                    rb.angularVelocity = startKey.angularVelocity;
+                    RestoreKey(startKey,false);                     // restore initial position
+                    _loopState = LoopState.Forward;                         // switch to forward loop
+
+                    if (!useRecorded)                                       // if not using recorded track
+                    {
+                        keys.Clear();                                           // clear recording
+                    }
                     break;
                 }
-                var key =  keys[keys.Count - (int)trackRate];
-                rb.MovePosition(key.position);
-                rb.MoveRotation(key.rotation);
-                keys = keys.Take(keys.Count - (int)trackRate).ToList();
+                
+                                                                        // else (trackback not finished)
+                _currentKey-=(int)trackRate;                                // skip to match trackback speed
+                while (_currentKey > 0 &&                                   // while has frames remaining    AND
+                       keys[_currentKey].velocity.magnitude == 0 &&         // current frame is not moving   AND
+                       keys[_currentKey].angularVelocity.magnitude == 0)    // current frame is not rotating
+                {
+                    _currentKey--;                                          // skip frame
+                }
+
+                var key = keys[_currentKey];                    
+                RestoreKey(key,true);                               // restore frame
                 break;
         }
-        
     }
 }
