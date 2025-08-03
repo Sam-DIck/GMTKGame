@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Linq;
 
 /// <summary>
 /// “Gravity-gun” that grabs a Rigidbody and keeps it in front of the camera.
@@ -29,7 +30,7 @@ public class GravityGunRework : MonoBehaviour
     // ───────── Input (New Input System) ────────────────────────────────────────
     [Header("Input")]
     [SerializeField] private InputActionReference grabAction;
-
+    [SerializeField] private InputActionAsset inputActions;
     // ───────── Internals ───────────────────────────────────────────────────────
     private Camera _cam;
     private Rigidbody _held;
@@ -42,8 +43,18 @@ public class GravityGunRework : MonoBehaviour
 
     private void OnEnable()
     {
-        grabAction.action.performed += TryGrab;
-        grabAction.action.canceled += Release;
+        inputActions = Resources.Load<InputActionAsset>("InputSystem_Actions");
+        InputAction act = inputActions.FindAction("Player/GravityGun",true);
+        foreach (var inputActionsActionMap in inputActions.actionMaps[0])
+        {
+            Debug.Log(inputActionsActionMap.name);
+        }
+        if (act  != null)
+        {
+            act.Enable();
+            act.performed += TryGrab;
+            act.canceled += Release;
+        }
     }
 
     private void OnDisable()
@@ -90,6 +101,7 @@ public class GravityGunRework : MonoBehaviour
     #region Grab / release helpers
     private void TryGrab(InputAction.CallbackContext ctx)
     {
+        Debug.LogError("TryGrab");
         if (_held) return;                            // already holding something
 
         Ray ray = _cam.ScreenPointToRay(
@@ -118,6 +130,7 @@ public class GravityGunRework : MonoBehaviour
 
     private void Release(InputAction.CallbackContext ctx = default)
     {
+        Debug.LogError("Release");
         if (!_held) return;
 
         _held.useGravity = true;

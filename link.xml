@@ -1,0 +1,6 @@
+<linker>
+  <assembly fullname="Unity.InputSystem">
+    <type fullname="*" preserve="all"/>
+  </assembly>
+</linker>
+

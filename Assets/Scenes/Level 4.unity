@@ -210,10 +210,6 @@ PrefabInstance:
       propertyPath: m_LocalRotation.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 3882608283728010889, guid: 0eace665cf1e0fefcbc8b96e7960c4b7, type: 3}
-      propertyPath: groundLayers.m_Bits
-      value: 9
-      objectReference: {fileID: 0}
     - target: {fileID: 5736826470374609622, guid: 0eace665cf1e0fefcbc8b96e7960c4b7, type: 3}
       propertyPath: GGAction
       value: 
@@ -2626,6 +2622,6 @@ SceneRoots:
   - {fileID: 1670480580}
   - {fileID: 608020589}
   - {fileID: 330133080}
+  - {fileID: 1661330405}
   - {fileID: 384535812}
   - {fileID: 1146215047}
-  - {fileID: 1661330405}

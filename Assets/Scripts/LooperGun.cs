@@ -7,19 +7,22 @@ public class LooperGun : MonoBehaviour
 {
     
     [SerializeField] private float maxDistance = 100f;
+    [FormerlySerializedAs("recordActionReference")]
     [Header("Input")]
-    [SerializeField] private InputActionReference recordActionReference;
-    [SerializeField] private InputActionReference removeActionReference;
+    [SerializeField] private InputActionReference recordAction;
+    [FormerlySerializedAs("removeActionReference")] [SerializeField] private InputActionReference removeAction;
     private Camera _mainCamera;
 
     private LoopedObject _targetedObject; // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         _mainCamera = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Camera>();
-        recordActionReference.action.started += StartRecord;
-        recordActionReference.action.canceled += StopRecord;
-
-        removeActionReference.action.started += RemoveLoop;
+        recordAction.action.Enable();
+        recordAction.action.started += StartRecord;
+        recordAction.action.canceled += StopRecord;
+        
+        removeAction.action.Enable();
+        removeAction.action.started += RemoveLoop;
         
     }
 

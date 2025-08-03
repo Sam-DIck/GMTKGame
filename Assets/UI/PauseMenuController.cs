@@ -73,7 +73,7 @@ public class PauseMenuController : MonoBehaviour
 
         if (backButton != null) backButton.clicked += BackToMain;
         {
-            Debug.LogError("BackButton clicked");
+            Debug.Log("BackButton clicked");
         }
        
 

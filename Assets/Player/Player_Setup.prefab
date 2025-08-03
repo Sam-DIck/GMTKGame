@@ -443,7 +443,7 @@ GameObject:
   - component: {fileID: 1636061856462114306}
   - component: {fileID: 7285591185002602218}
   - component: {fileID: 3882608283728010889}
-  - component: {fileID: 5736826470374609622}
+  - component: {fileID: 6470796467081578286}
   - component: {fileID: 3158168339932063242}
   m_Layer: 8
   m_Name: PlayerCapsule
@@ -637,11 +637,11 @@ MonoBehaviour:
   groundedRadius: 0.5
   groundLayers:
     serializedVersion: 2
-    m_Bits: 8
+    m_Bits: 9
   cinemachineCameraTarget: {fileID: 8704929322400834980}
   topClamp: 89
   bottomClamp: -89
---- !u!114 &5736826470374609622
+--- !u!114 &6470796467081578286
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -650,14 +650,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 8678077603367584152}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b5dd0ba788987fdcba63fabd618ec7fd, type: 3}
+  m_Script: {fileID: 11500000, guid: a4683d9fd16b2444fa4f6ba1035ba271, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxDistance: 5
-  maxSpeed: 15
-  maxForce: 200
-  forceScale: 10
-  actionReference: {fileID: 1120369429361536294, guid: 289c1b55c9541489481df5cc06664110, type: 3}
+  maxGrabDistance: 100
+  holdDistance: 4
+  maxAcceleration: 25
+  maxDeceleration: 50
+  angularDampingDuringHold: 4
+  maxAngularSpeed: 20
+  grabAction: {fileID: 1120369429361536294, guid: 289c1b55c9541489481df5cc06664110, type: 3}
+  inputActions: {fileID: -944628639613478452, guid: 289c1b55c9541489481df5cc06664110, type: 3}
 --- !u!114 &3158168339932063242
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -671,8 +674,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxDistance: 5
-  recordActionReference: {fileID: 7971842144606684630, guid: 289c1b55c9541489481df5cc06664110, type: 3}
-  removeActionReference: {fileID: 1781555164194001046, guid: 289c1b55c9541489481df5cc06664110, type: 3}
+  recordAction: {fileID: 7971842144606684630, guid: 289c1b55c9541489481df5cc06664110, type: 3}
+  removeAction: {fileID: 1781555164194001046, guid: 289c1b55c9541489481df5cc06664110, type: 3}
 --- !u!1 &8704929322400834980
 GameObject:
   m_ObjectHideFlags: 0

@@ -279,6 +279,10 @@ PrefabInstance:
       propertyPath: GGAction
       value: 
       objectReference: {fileID: -2184649818985049376, guid: 289c1b55c9541489481df5cc06664110, type: 3}
+    - target: {fileID: 6470796467081578286, guid: 0eace665cf1e0fefcbc8b96e7960c4b7, type: 3}
+      propertyPath: grabActionAsset
+      value: 
+      objectReference: {fileID: -944628639613478452, guid: 289c1b55c9541489481df5cc06664110, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
