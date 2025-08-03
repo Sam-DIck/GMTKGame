@@ -1,46 +1,57 @@
 using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.Serialization;
 
-public class LockedDoor : EventReceiver
+public class LockedDoor : MonoBehaviour
 {
     [Header("Door States")]
     [SerializeField] private Transform openTransform;
     [SerializeField] private Transform closedTransform;
     [SerializeField] private bool invert;
-    
+
     [Header("Door Transition")]
     [SerializeField] private float duration = 1f;
-    
-    [Header("Safety Zone")]
-    [SerializeField]  private TriggerBoxEventTrigger safetyZone;
-    
+
+    [Header("Safety Zone (Optional)")]
+    [SerializeField] private TriggerBoxEventTrigger safetyZone;
+
+    [Header("Required Event Senders")]
+    [SerializeField] private EventSender[] requiredSenders; // Support multiple senders
+
     private float _openAmount;
 
-    private bool ShouldOpen => (eventSender&&eventSender.EventActive) ^ invert;
-    private bool ShouldClose => !ShouldOpen && _openAmount > 0f;
-    private bool Opening => ShouldOpen || (safetyZone && safetyZone.EventActive && ShouldClose);
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    private bool AllSendersActive
+    {
+        get
+        {
+            if (requiredSenders == null || requiredSenders.Length == 0) return false;
+            foreach (var sender in requiredSenders)
+            {
+                if (sender == null) continue;
+                if (invert ? sender.EventActive : !sender.EventActive)
+                    return false;
+            }
+            return true;
+        }
+    }
+
+    private bool ShouldClose => !AllSendersActive && _openAmount > 0f;
+    private bool Opening => AllSendersActive || (safetyZone && safetyZone.EventActive && ShouldClose);
+
     void Start()
     {
-        _openAmount = ShouldOpen ? 1f : 0f;
+        _openAmount = AllSendersActive ? 1f : 0f;
     }
 
-    // Update is called once per frame
     void Update()
     {
-        
-        
-        if (_openAmount<0f && !Opening) return;               // closed  AND NOT opening
-        if (_openAmount>1f && Opening) return;                // open    AND     opening
-        _openAmount += Opening ? Time.deltaTime/duration : -Time.deltaTime/duration;
+        if (_openAmount < 0f && !Opening) return;
+        if (_openAmount > 1f && Opening) return;
+
+        _openAmount += Opening ? Time.deltaTime / duration : -Time.deltaTime / duration;
+        _openAmount = Mathf.Clamp01(_openAmount);
+
         transform.position = Vector3.Lerp(closedTransform.position, openTransform.position, _openAmount);
         transform.localScale = Vector3.Lerp(closedTransform.localScale, openTransform.localScale, _openAmount);
-    }
-
-    public override void OnEventChange(bool newState)
-    {
-        
     }
 
     void OnDrawGizmosSelected()
@@ -57,13 +68,13 @@ public class LockedDoor : EventReceiver
             Gizmos.DrawWireCube(closedTransform.position, closedTransform.lossyScale);
         }
     }
+
     void OnDrawGizmos()
     {
         if (openTransform && closedTransform)
         {
-            Gizmos.color = Color.orange;
+            Gizmos.color = Color.yellow;
             Gizmos.DrawLine(openTransform.position, closedTransform.position);
         }
-
     }
 }

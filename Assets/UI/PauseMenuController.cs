@@ -15,57 +15,68 @@ public class PauseMenuController : MonoBehaviour
     private VisualElement root;
     private VisualElement panelMain;
     private VisualElement panelControls;
+
+    private Button resumeButton;
+    private Button restartButton;
+    private Button controlsButton;
+    private Button quitButton;
     private Button backButton;
 
     private bool isPaused;
     private bool inControlsView;
 
+    // -------------------------------------------------- Unity events
     private void OnEnable()
     {
-        // Enable pause input
+        // Input setup
         if (pauseAction != null)
         {
             pauseAction.action.Enable();
             pauseAction.action.performed += OnPausePerformed;
         }
 
-        // Cache UI elements
-        if (pauseMenuDocument != null)
+        // UI cache
+        if (pauseMenuDocument == null)
         {
-            root = pauseMenuDocument.rootVisualElement;
-            root.style.display = DisplayStyle.None; // hidden until paused
-
-            panelMain = root.Q<VisualElement>("panel-main");
-            panelControls = root.Q<VisualElement>("panel-controls");
-            if (panelControls != null)
-            {
-                panelControls.style.display = DisplayStyle.None;
-                panelControls.BringToFront(); // ensure overlay order
-
-                backButton = panelControls.Q<Button>("back-button");
-                if (backButton != null)
-                    backButton.RegisterCallback<ClickEvent>(_ => BackToMain());
-                else
-                    Debug.LogWarning("PauseMenuController: No 'back-button' found inside 'panel-controls'.");
-            }
-            else
-            {
-                Debug.LogError("PauseMenuController: No VisualElement named 'panel-controls' found. Controls overlay will not work.");
-            }
-
-            // Main panel button callbacks
-            if (panelMain != null)
-            {
-                panelMain.Q<Button>("resume-button")?.RegisterCallback<ClickEvent>(_ => Resume());
-                panelMain.Q<Button>("restart-button")?.RegisterCallback<ClickEvent>(_ => Restart());
-                panelMain.Q<Button>("controls-button")?.RegisterCallback<ClickEvent>(_ => ShowControls());
-                panelMain.Q<Button>("quit-button")?.RegisterCallback<ClickEvent>(_ => Quit());
-            }
-            else
-            {
-                Debug.LogError("PauseMenuController: No VisualElement named 'panel-main' found. Main pause menu will not show.");
-            }
+            Debug.LogError("PauseMenuController: UIDocument reference missing.");
+            return;
         }
+
+        root = pauseMenuDocument.rootVisualElement;
+        root.style.display = DisplayStyle.None; // invisible until paused
+
+        panelMain = root.Q<VisualElement>("panel-main");
+        panelControls = root.Q<VisualElement>("panel-controls");
+
+        if (panelMain == null || panelControls == null)
+        {
+            Debug.LogError("PauseMenuController: Required panels not found. Check names in UXML.");
+            return;
+        }
+
+        panelControls.style.display = DisplayStyle.None;
+
+        // Buttons in main panel
+        resumeButton = panelMain.Q<Button>("resume-button");
+        restartButton = panelMain.Q<Button>("restart-button");
+        controlsButton = panelMain.Q<Button>("controls-button");
+        quitButton = panelMain.Q<Button>("quit-button");
+
+        // Button in controls panel
+        backButton = panelControls.Q<Button>("back-button");
+
+        // Wire callbacks safely
+        if (resumeButton != null) resumeButton.clicked += Resume;
+        if (restartButton != null) restartButton.clicked += Restart;
+        if (controlsButton != null) controlsButton.clicked += ShowControls;
+        if (quitButton != null) quitButton.clicked += Quit;
+
+        if (backButton != null) backButton.clicked += BackToMain;
+        {
+            Debug.LogError("BackButton clicked");
+        }
+       
+
     }
 
     private void OnDisable()
@@ -77,7 +88,7 @@ public class PauseMenuController : MonoBehaviour
         }
     }
 
-    // ------------------------- Input
+    // -------------------------------------------------- Input handler
     private void OnPausePerformed(InputAction.CallbackContext ctx)
     {
         if (!isPaused)
@@ -93,27 +104,30 @@ public class PauseMenuController : MonoBehaviour
             Resume();
     }
 
-    // ------------------------- State management
+    // -------------------------------------------------- State helpers
     private void Pause()
     {
         isPaused = true;
         inControlsView = false;
 
         Time.timeScale = 0f;
+
         root.style.display = DisplayStyle.Flex;
         panelMain.style.display = DisplayStyle.Flex;
         panelControls.style.display = DisplayStyle.None;
+        panelMain.BringToFront();
 
         UnityEngine.Cursor.lockState = CursorLockMode.None;
         UnityEngine.Cursor.visible = true;
     }
 
-    public void Resume()
+    private void Resume()
     {
         isPaused = false;
         inControlsView = false;
 
         Time.timeScale = 1f;
+
         root.style.display = DisplayStyle.None;
 
         UnityEngine.Cursor.lockState = CursorLockMode.Locked;
@@ -135,18 +149,22 @@ public class PauseMenuController : MonoBehaviour
 #endif
     }
 
-    // ------------------------- Panel switching
+    // -------------------------------------------------- Panel switching
     private void ShowControls()
     {
         inControlsView = true;
         panelMain.style.display = DisplayStyle.None;
         panelControls.style.display = DisplayStyle.Flex;
+        panelControls.BringToFront();
     }
 
     private void BackToMain()
     {
+        Debug.LogError("BacktoMain Ran.");
         inControlsView = false;
         panelControls.style.display = DisplayStyle.None;
         panelMain.style.display = DisplayStyle.Flex;
+        panelControls.SendToBack();
+        panelMain.BringToFront();
     }
 }

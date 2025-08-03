@@ -1,74 +1,96 @@
- using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.InputSystem;
 
+/// <summary>
+/// Simple “gravity-gun” pick-up: hold the Grab action, ray-cast from screen
+/// centre, lock the first rigidbody hit, and keep it glued to a point in front
+/// of the camera.  Release the action to drop it.
+/// </summary>
 public class GravityGun : MonoBehaviour
 {
-    [SerializeField] private float maxDistance = 100f;
-    [SerializeField] private float maxSpeed = 1f;
-    [SerializeField] private float maxForce = 50f;
-    [SerializeField] private  float forceScale = 1f;
-    
-    private Camera _mainCamera;
-    private Rigidbody _lockedRigidbody;
-    private float _lockDistance;
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    [Header("Grab Settings")]
+    [SerializeField] private float maxGrabDistance = 100f;   // how far you can grab
+    [SerializeField] private float holdDistance = 4f;      // where the object sits
+    [SerializeField] private float maxVelChange = 15f;     // snappiness of motion
+
+    [Header("Input (New Input System)")]
+    [SerializeField] private InputActionReference grabAction; // performed / canceled
+
+    private Camera _cam;
+    private Rigidbody _held;
+    private Vector3 _localHoldPoint; // keep original grab offset
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    #region Unity lifecycle
+    void Awake()
     {
-        _mainCamera = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Camera>();
+        _cam = Camera.main;
     }
 
-    // Update is called once per frame
+    void OnEnable()
+    {
+        grabAction.action.performed += TryGrab;
+        grabAction.action.canceled += Release;
+    }
+
+    void OnDisable()
+    {
+        grabAction.action.performed -= TryGrab;
+        grabAction.action.canceled -= Release;
+        Release(); // just in case
+    }
+
+    // All physics work in FixedUpdate
     void FixedUpdate()
     {
-        if (Input.GetMouseButtonDown(0))
-        {
-            
-            Vector3 screenCenter = new Vector3(Screen.width / 2f, Screen.height / 2f, 0);
-            Ray ray = _mainCamera.ScreenPointToRay(screenCenter);
-            if (Physics.Raycast(ray, out  RaycastHit hit))
-            {
-                //Debug.Log("Hit object: " + hit.collider.name);
+        if (!_held) return;
 
-                if (hit.distance < maxDistance)
-                {
-                    Debug.Log(hit.collider.name);
-                    Rigidbody rb = hit.collider.GetComponent<Rigidbody>();
-                    if (rb && !rb.isKinematic)
-                    {
-                        _lockDistance = (_mainCamera.transform.position - hit.transform.position).magnitude;
-                        _lockedRigidbody = rb;
-                        _lockedRigidbody.useGravity = false;
-                    }
-                }
+        // 1. Desired position = holdDistance units straight ahead
+        Vector3 targetPos = _cam.transform.position + _cam.transform.forward * holdDistance;
+
+        // 2. Preserve the grab offset so we don't pull from the collider centre
+        targetPos += _cam.transform.TransformVector(_localHoldPoint);
+
+        // 3. Velocity we need to arrive this frame
+        Vector3 desiredVel = (targetPos - _held.position) / Time.fixedDeltaTime;
+        Vector3 velChange = desiredVel - _held.linearVelocity;
+
+        // 4. Clamp and apply as an instantaneous velocity change
+        velChange = Vector3.ClampMagnitude(velChange, maxVelChange);
+        _held.AddForce(velChange, ForceMode.VelocityChange);
+    }
+    #endregion
+    // ─────────────────────────────────────────────────────────────────────────────
+    #region Grabbing / Releasing
+    private void TryGrab(InputAction.CallbackContext ctx)
+    {
+        // Already holding something? Ignore.
+        if (_held) return;
+
+        Ray ray = _cam.ScreenPointToRay(new Vector2(Screen.width * 0.5f, Screen.height * 0.5f));
+
+        if (Physics.Raycast(ray, out RaycastHit hit, maxGrabDistance))
+        {
+            Rigidbody rb = hit.rigidbody;
+            if (rb && !rb.isKinematic)
+            {
+                _held = rb;
+                _held.useGravity = false;
+                _held.linearDamping = 4f;   // optional: dampen spin
+
+                // Save where on the rigidbody we grabbed it (in local space)
+                _localHoldPoint = _cam.transform.InverseTransformVector(hit.point - rb.position);
             }
         }
-
-        if (_lockedRigidbody)
-        {
-            Vector3 targetPosition = _mainCamera.transform.position + _lockDistance * _mainCamera.transform.forward;
-            Vector3 direction = targetPosition - _lockedRigidbody.transform.position;
-            Vector3 targetVelocity = Vector3.ClampMagnitude(direction,maxSpeed);
-            
-            Vector3 delta = targetVelocity - _lockedRigidbody.linearVelocity;
-            Vector3 force = Vector3.ClampMagnitude(delta * forceScale, maxForce);
-            _lockedRigidbody.AddForce(force);
-            
-        }
-
-        if (!Input.GetMouseButton(0) && _lockedRigidbody)
-        {
-            _lockedRigidbody.useGravity = true;
-            _lockedRigidbody = null;
-        }
     }
 
-    void OnDrawGizmosSelected()
+    private void Release(InputAction.CallbackContext ctx = default)
     {
-        if (!Application.isPlaying) return;
-        Vector3 screenCenter = new Vector3(Screen.width / 2f, Screen.height / 2f, 0);
-        Ray ray = _mainCamera.ScreenPointToRay(screenCenter);
-        if (Physics.Raycast(ray, out RaycastHit hit))
-        {
-            Gizmos.DrawSphere(hit.point, 0.5f);
-        }
+        if (!_held) return;
+
+        _held.useGravity = true;
+        _held.linearDamping = 0f;
+        _held = null;
     }
+    #endregion
 }
