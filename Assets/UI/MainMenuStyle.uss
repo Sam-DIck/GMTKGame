@@ -1,0 +1,106 @@
+Button {
+    background-color: rgb(123, 228, 217);
+    color: rgb(60, 60, 60);
+    border-left-color: rgb(255, 255, 255);
+    border-right-color: rgb(255, 255, 255);
+    border-top-color: rgb(255, 255, 255);
+    border-bottom-color: rgb(255, 255, 255);
+    flex-direction: column;
+    flex-grow: 0;
+    flex-shrink: 0;
+    align-items: auto;
+    justify-content: flex-start;
+    align-self: auto;
+    align-content: auto;
+    flex-basis: 10%;
+    min-width: 20%;
+    min-height: 10px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    margin-right: 4px;
+    margin-left: 4px;
+}
+
+Button:hover {
+    scale: 1.1 1.1;
+    transition-duration: 0.4s;
+    background-color: rgb(8, 219, 206);
+    color: rgb(0, 0, 0);
+    border-left-color: rgb(255, 255, 255);
+    border-right-color: rgb(255, 255, 255);
+    border-top-color: rgb(255, 255, 255);
+    border-bottom-color: rgb(255, 255, 255);
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+    -unity-font-style: normal;
+    transition-timing-function: ease-in;
+    font-size: 16px;
+}
+
+.levels-button {
+    min-width: 25%;
+    min-height: 15%;
+    font-size: 20px;
+}
+
+Button:active {
+    scale: 1.2 1.2;
+    transition-duration: 0.1s;
+    background-color: rgb(14, 140, 140);
+    color: rgb(0, 0, 0);
+    border-left-color: rgb(255, 255, 255);
+    border-right-color: rgb(255, 255, 255);
+    border-top-color: rgb(255, 255, 255);
+    border-bottom-color: rgb(255, 255, 255);
+    border-top-width: 2px;
+    border-right-width: 2px;
+    border-bottom-width: 2px;
+    border-left-width: 2px;
+    -unity-font-style: bold;
+    transition-timing-function: ease-in;
+}
+
+.levels-button:hover {
+    scale: 1.1 1.1;
+    transition-duration: 0.4s;
+    background-color: rgb(8, 219, 206);
+    color: rgb(0, 0, 0);
+    border-left-color: rgb(255, 255, 255);
+    border-right-color: rgb(255, 255, 255);
+    border-top-color: rgb(255, 255, 255);
+    border-bottom-color: rgb(255, 255, 255);
+    border-top-width: 2px;
+    border-right-width: 2px;
+    border-bottom-width: 2px;
+    border-left-width: 2px;
+    -unity-font-style: normal;
+    transition-timing-function: ease-in;
+    font-size: 24px;
+}
+
+.levels-button:active {
+    scale: 1.15 1.15;
+    transition-duration: 0.1s;
+    background-color: rgb(14, 140, 140);
+    color: rgb(0, 0, 0);
+    border-left-color: rgb(255, 255, 255);
+    border-right-color: rgb(255, 255, 255);
+    border-top-color: rgb(255, 255, 255);
+    border-bottom-color: rgb(255, 255, 255);
+    border-top-width: 2px;
+    border-right-width: 2px;
+    border-bottom-width: 2px;
+    border-left-width: 2px;
+    -unity-font-style: normal;
+    transition-timing-function: ease-in;
+}
